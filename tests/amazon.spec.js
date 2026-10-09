@@ -1,42 +1,68 @@
-const { test } = require('@playwright/test');
 
-test.describe('Ecommerce Tests (Stable)', () => {
+const { test, expect } = require('@playwright/test');
 
-  test('Test Case 1: iPhone (Demo)', async ({ page }) => {
-    await page.goto('https://www.demoblaze.com');
+const BASE_URL = 'https://www.demoblaze.com';
 
-    // Click phones
-    await page.click('a:has-text("Phones")');
+const products = [
+  {
+    name: 'Iphone 6 32gb',
+    category: 'Phones',
+  },
+  {
+    name: 'Samsung galaxy s6',
+    category: 'Phones',
+  },
+];
 
-    // Select product
-    await page.click('a:has-text("Iphone 6 32gb")');
+for (const product of products) {
+  test(`Add ${product.name} to cart`, async ({ page }) => {
+    await page.goto(BASE_URL);
 
-    // Get price
-    const price = await page.locator('.price-container').textContent();
-    console.log('iPhone Price:', price);
+    // Open the Phones category.
+    await page.getByRole('link', {
+      name: product.category,
+      exact: true,
+    }).click();
 
-    // Add to cart
-    await page.click('a:has-text("Add to cart")');
+    // Select the requested product.
+    await page.getByRole('link', {
+      name: product.name,
+      exact: true,
+    }).click();
 
-    page.once('dialog', dialog => dialog.accept());
+    // Verify that the correct product details are displayed.
+    await expect(
+      page.locator('h2.name')
+    ).toHaveText(product.name);
 
-    console.log('✅ iPhone added to cart');
+    // Verify that a valid price is displayed.
+    const priceLocator = page.locator('.price-container');
+
+    await expect(priceLocator).toBeVisible();
+
+    const priceText = await priceLocator.innerText();
+
+    expect(
+      priceText,
+      `Expected a valid price for ${product.name}`
+    ).toMatch(/\$\s*\d+(?:\.\d{1,2})?/);
+
+    console.log(`${product.name} price: ${priceText}`);
+
+    // Register the dialog listener BEFORE clicking Add to cart.
+    const dialogPromise = page.waitForEvent('dialog');
+
+    await page.getByRole('link', {
+      name: 'Add to cart',
+      exact: true,
+    }).click();
+
+    const dialog = await dialogPromise;
+
+    try {
+      expect(dialog.message()).toContain('Product added');
+    } finally {
+      await dialog.accept();
+    }
   });
-
-  test('Test Case 2: Samsung (Demo)', async ({ page }) => {
-    await page.goto('https://www.demoblaze.com');
-
-    await page.click('a:has-text("Phones")');
-    await page.click('a:has-text("Samsung galaxy s6")');
-
-    const price = await page.locator('.price-container').textContent();
-    console.log('Samsung Price:', price);
-
-    await page.click('a:has-text("Add to cart")');
-
-    page.once('dialog', dialog => dialog.accept());
-
-    console.log('✅ Samsung added to cart');
-  });
-
-});
+}

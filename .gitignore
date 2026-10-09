@@ -1,0 +1,12 @@
+```gitignore
+# Dependencies
+node_modules/
+
+# Playwright output
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Debug logs
+npm-debug.log*
+```

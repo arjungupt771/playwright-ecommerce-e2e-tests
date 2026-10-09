@@ -1,11 +1,18 @@
+
 // @ts-check
 const { defineConfig } = require('@playwright/test');
 
 module.exports = defineConfig({
   testDir: './tests',
-  fullyParallel: true,  // 🔥 Important
-  workers: 2,           // Runs both tests parallel
+
+  fullyParallel: true,
+  workers: 2,
+
+  reporter: 'list',
+
   use: {
     headless: true,
+    screenshot: 'only-on-failure',
+    trace: 'retain-on-failure',
   },
 });
